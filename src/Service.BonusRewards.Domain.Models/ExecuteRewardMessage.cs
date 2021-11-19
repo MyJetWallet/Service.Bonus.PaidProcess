@@ -9,7 +9,7 @@ namespace Service.BonusRewards.Domain.Models
         public const string TopicName = "bonus-reward-execution";
         
         [DataMember(Order = 1)] public string ClientId { get; set; }
-        [DataMember(Order = 2)] public RewardType RewardType { get; set; }
+        [DataMember(Order = 2)] public string RewardType { get; set; }
         [DataMember(Order = 3)] public string FeeShareGroup { get; set; }
         [DataMember(Order = 4)] public string Asset { get; set; }
         [DataMember(Order = 5)] public decimal AmountAbs { get; set; }

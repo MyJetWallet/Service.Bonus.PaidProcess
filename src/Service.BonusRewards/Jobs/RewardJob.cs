@@ -50,24 +50,33 @@ namespace Service.BonusRewards.Jobs
         {
             try
             {
-                switch (message.RewardType)
+                if (Enum.TryParse(message.RewardType, out RewardType type))
                 {
-                    case RewardType.FeeShareAssignment:
-                        await HandleFeeShareAssignment(message);
-                        break;
-                    case RewardType.ReferrerPaymentAbsolute:
-                        await HandlePayments(message, true);
-                        break;
-                    case RewardType.ClientPaymentAbsolute:
-                        await HandlePayments(message, false);
-                        break;
-                    case RewardType.ReferrerPaymentRelative:
-                        break;
-                    case RewardType.ClientPaymentRelative:
-                        break;
-                    default:
-                        _logger.LogError("Unable handle reward message with type {type}, clientId {clientId}, rewardId {rewardId}, campaignId {campaignId}", message.RewardType, message.ClientId, message.RewardId, message.CampaignId);
-                        break;
+                    switch (type)
+                    {
+                        case RewardType.FeeShareAssignment:
+                            await HandleFeeShareAssignment(message);
+                            break;
+                        case RewardType.ReferrerPaymentAbsolute:
+                            await HandlePayments(message, true);
+                            break;
+                        case RewardType.ClientPaymentAbsolute:
+                            await HandlePayments(message, false);
+                            break;
+                        case RewardType.ReferrerPaymentRelative:
+                            break;
+                        case RewardType.ClientPaymentRelative:
+                            break;
+                        default:
+                            _logger.LogError(
+                                "Unable handle reward message with type {type}, clientId {clientId}, rewardId {rewardId}, campaignId {campaignId}",
+                                message.RewardType, message.ClientId, message.RewardId, message.CampaignId);
+                            break;
+                    }
+                }
+                else
+                {
+                    _logger.LogError("Unable to parse reward type {type}", message.RewardType);
                 }
             }
             catch (Exception e)
@@ -80,7 +89,7 @@ namespace Service.BonusRewards.Jobs
         private async Task HandleFeeShareAssignment(ExecuteRewardMessage message)
         {
             await using var context = new DatabaseContext(_dbContextOptionsBuilder.Options);
-
+            Enum.TryParse(message.RewardType, out RewardType type);
             var profile = await _clientProfileService.GetOrCreateProfile(new GetClientProfileRequest
             {
                 ClientId = message.ClientId
@@ -97,7 +106,7 @@ namespace Service.BonusRewards.Jobs
                         ClientId = message.ClientId,
                         RewardId = message.RewardId,
                         CampaignId = message.CampaignId,
-                        RewardType = message.RewardType,
+                        RewardType = type,
                         Status = RewardStatus.Failed,
                         TimeStamp = DateTime.UtcNow
                     }
@@ -119,7 +128,7 @@ namespace Service.BonusRewards.Jobs
                         ClientId = message.ClientId,
                         RewardId = message.RewardId,
                         CampaignId = message.CampaignId,
-                        RewardType = message.RewardType,
+                        RewardType = type,
                         Status = RewardStatus.Failed,
                         TimeStamp = DateTime.UtcNow
                     }
@@ -147,7 +156,7 @@ namespace Service.BonusRewards.Jobs
                     ClientId = message.ClientId,
                     RewardId = message.RewardId,
                     CampaignId = message.CampaignId,
-                    RewardType = message.RewardType,
+                    RewardType = type,
                     Status = response.IsSuccess ? RewardStatus.Done : RewardStatus.Failed,
                     FeeShareGroup = message.FeeShareGroup,
                     ReferrerClientId = profile.ReferrerClientId,
@@ -161,6 +170,8 @@ namespace Service.BonusRewards.Jobs
             await using var context = new DatabaseContext(_dbContextOptionsBuilder.Options);
 
             string referrerId = "";
+            Enum.TryParse(message.RewardType, out RewardType type);
+
             if (toReferrer)
             {
                 var profile = await _clientProfileService.GetOrCreateProfile(new GetClientProfileRequest
@@ -179,7 +190,7 @@ namespace Service.BonusRewards.Jobs
                             ClientId = message.ClientId,
                             RewardId = message.RewardId,
                             CampaignId = message.CampaignId,
-                            RewardType = message.RewardType,
+                            RewardType = type,
                             Status = RewardStatus.Failed,
                             TimeStamp = DateTime.UtcNow
                         }
@@ -237,7 +248,7 @@ namespace Service.BonusRewards.Jobs
                     ClientId = toReferrer ? referrerId : message.ClientId,
                     RewardId = message.RewardId,
                     CampaignId = message.CampaignId,
-                    RewardType = message.RewardType,
+                    RewardType = type,
                     Status = response.Result ? RewardStatus.Done : RewardStatus.Failed,
                     Asset = message.Asset,
                     AmountAbs = message.AmountAbs,
