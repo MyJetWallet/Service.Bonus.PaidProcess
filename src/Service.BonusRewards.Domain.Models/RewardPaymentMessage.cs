@@ -12,5 +12,6 @@ namespace Service.BonusRewards.Domain.Models
         [DataMember(Order = 3)] public string Asset { get; set; }
         [DataMember(Order = 4)] public decimal Amount { get; set; }
         [DataMember(Order = 5)] public DateTime TimeStamp { get; set; }
+        [DataMember(Order = 6)] public string OperationId { get; set; }
     }
 }

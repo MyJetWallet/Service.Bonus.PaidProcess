@@ -195,10 +195,11 @@ namespace Service.BonusRewards.Jobs
                 BrandId = Program.Settings.DefaultBrand
             });
 
+            var transactionId = $"{message.ClientId}+|+{message.RewardId}";
 
             var response = await _changeBalanceService.PayBonusRewardAsync(new FeeTransferRequest
             {
-                TransactionId = $"{message.ClientId}+|+{message.RewardId}",
+                TransactionId = transactionId,
                 ClientId = toReferrer ? referrerId : message.ClientId,
                 FromWalletId = Program.Settings.BonusServiceWalletId,
                 ToWalletId = walletsResponse.Wallets.First().WalletId,
@@ -213,6 +214,7 @@ namespace Service.BonusRewards.Jobs
             {
                 await _publisher.PublishAsync(new RewardPaymentMessage
                 {
+                    OperationId = transactionId,
                     ClientId = toReferrer ? referrerId : message.ClientId,
                     WalletId = walletsResponse.Wallets.First().WalletId,
                     Asset = message.Asset,
