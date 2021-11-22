@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.Serialization;
+using Service.BonusCampaign.Domain.Models.Enums;
 using Service.BonusCampaign.Domain.Models.Rewards;
 
 namespace Service.BonusRewards.Domain.Models

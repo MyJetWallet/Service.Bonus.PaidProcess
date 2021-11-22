@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using MyJetWallet.Domain;
 using MyJetWallet.Sdk.ServiceBus;
+using Service.BonusCampaign.Domain.Models.Enums;
 using Service.BonusCampaign.Domain.Models.Rewards;
 using Service.BonusRewards.Domain.Models;
 using Service.BonusRewards.Postgres;
