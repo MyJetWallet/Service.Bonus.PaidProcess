@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using DotNetCoreDecorators;
 using Microsoft.EntityFrameworkCore;
@@ -148,7 +149,11 @@ namespace Service.BonusRewards.Jobs
                 _logger.LogInformation("Reward {rewardId} for client {clientId} executed successfully",
                     message.RewardId, message.ClientId);
             else
+            {
                 _logger.LogError("Unable to assign client {clientId} to fee share group {feeShareGroupId}. ErrorCode {errorMessage}. Reward {rewardId} failed", message.ClientId, message.FeeShareGroup, response.ErrorCode, message.RewardId);
+                Thread.Sleep(10000);
+                throw new Exception($"Unable to assign client {message.ClientId} to fee share group {message.FeeShareGroup}. ErrorCode {response.ErrorCode}. Reward {message.RewardId} failed");
+            }
             
             await context.UpsertAsync(new[]
             {
@@ -240,7 +245,11 @@ namespace Service.BonusRewards.Jobs
                 _logger.LogInformation("Reward {rewardId} for client {clientId} executed successfully",
                     message.RewardId, message.ClientId);
             else
+            {
                 _logger.LogError("Unable to transfer reward to {clientId}. ME response: {errorMessage}. Reward {rewardId} failed", message.ClientId, response.ErrorMessage, message.RewardId);
+                Thread.Sleep(10000);
+                throw new Exception($"Unable to transfer reward to {message.ClientId}. ME response: {response.ErrorMessage}. Reward {message.RewardId} failed");
+            }
 
             await context.UpsertAsync(new[]
             {
