@@ -107,7 +107,7 @@ namespace Service.BonusRewards.Jobs
                         ClientId = message.ClientId,
                         RewardId = message.RewardId,
                         CampaignId = message.CampaignId,
-                        RewardType = type,
+                        RewardType = type.ToString(),
                         Status = RewardStatus.Failed,
                         TimeStamp = DateTime.UtcNow
                     }
@@ -129,7 +129,7 @@ namespace Service.BonusRewards.Jobs
                         ClientId = message.ClientId,
                         RewardId = message.RewardId,
                         CampaignId = message.CampaignId,
-                        RewardType = type,
+                        RewardType = type.ToString(),
                         Status = RewardStatus.Failed,
                         TimeStamp = DateTime.UtcNow
                     }
@@ -157,7 +157,7 @@ namespace Service.BonusRewards.Jobs
                     ClientId = message.ClientId,
                     RewardId = message.RewardId,
                     CampaignId = message.CampaignId,
-                    RewardType = type,
+                    RewardType = type.ToString(),
                     Status = response.IsSuccess ? RewardStatus.Done : RewardStatus.Failed,
                     FeeShareGroup = message.FeeShareGroup,
                     ReferrerClientId = profile.ReferrerClientId,
@@ -191,7 +191,7 @@ namespace Service.BonusRewards.Jobs
                             ClientId = message.ClientId,
                             RewardId = message.RewardId,
                             CampaignId = message.CampaignId,
-                            RewardType = type,
+                            RewardType = type.ToString(),
                             Status = RewardStatus.Failed,
                             TimeStamp = DateTime.UtcNow
                         }
@@ -249,7 +249,7 @@ namespace Service.BonusRewards.Jobs
                     ClientId = toReferrer ? referrerId : message.ClientId,
                     RewardId = message.RewardId,
                     CampaignId = message.CampaignId,
-                    RewardType = type,
+                    RewardType = type.ToString(),
                     Status = response.Result ? RewardStatus.Done : RewardStatus.Failed,
                     Asset = message.Asset,
                     AmountAbs = message.AmountAbs,

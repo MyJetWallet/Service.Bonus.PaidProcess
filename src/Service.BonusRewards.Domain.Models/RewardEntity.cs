@@ -11,7 +11,7 @@ namespace Service.BonusRewards.Domain.Models
         [DataMember(Order = 1)]public string ClientId { get; set; }
         [DataMember(Order = 2)]public string RewardId { get; set; }
         [DataMember(Order = 3)]public string CampaignId { get; set; }
-        [DataMember(Order = 4)] public RewardType RewardType { get; set; }
+        [DataMember(Order = 4)] public string RewardType { get; set; }
         [DataMember(Order = 5)]public RewardStatus Status { get; set; }
         
         //FeeShare reward fields
