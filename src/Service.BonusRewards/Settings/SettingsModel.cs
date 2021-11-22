@@ -14,6 +14,9 @@ namespace Service.BonusRewards.Settings
         [YamlProperty("BonusRewards.ElkLogs")]
         public LogElkSettings ElkLogs { get; set; }
 
+        [YamlProperty("BonusRewards.BonusServiceClientId")]
+        public string BonusServiceClientId { get; set; }
+        
         [YamlProperty("BonusRewards.BonusServiceWalletId")]
         public string BonusServiceWalletId { get; set; }
         
@@ -28,12 +31,16 @@ namespace Service.BonusRewards.Settings
         
         [YamlProperty("BonusRewards.ChangeBalanceGatewayGrpcServiceUrl")]
         public string ChangeBalanceGatewayGrpcServiceUrl { get; set; }
+        
         [YamlProperty("BonusRewards.ClientProfileGrpcServiceUrl")]
         public string ClientProfileGrpcServiceUrl { get; set; }
+        
         [YamlProperty("BonusRewards.ClientWalletsGrpcServiceUrl")]
         public string ClientWalletsGrpcServiceUrl { get; set; }
+        
         [YamlProperty("BonusRewards.FeeShareGrpcServiceUrl")]
         public string FeeShareGrpcServiceUrl { get; set; }
+        
         [YamlProperty("BonusRewards.SpotServiceBusHostPort")]
         public string SpotServiceBusHostPort { get; set; }
 

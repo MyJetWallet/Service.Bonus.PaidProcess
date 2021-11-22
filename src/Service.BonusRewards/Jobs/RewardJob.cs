@@ -212,7 +212,7 @@ namespace Service.BonusRewards.Jobs
             var response = await _changeBalanceService.PayBonusRewardAsync(new FeeTransferRequest
             {
                 TransactionId = transactionId,
-                ClientId = toReferrer ? referrerId : message.ClientId,
+                ClientId = Program.Settings.BonusServiceClientId,
                 FromWalletId = Program.Settings.BonusServiceWalletId,
                 ToWalletId = walletsResponse.Wallets.First().WalletId,
                 Amount = (double)message.AmountAbs,
