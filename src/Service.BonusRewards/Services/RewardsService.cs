@@ -30,5 +30,15 @@ namespace Service.BonusRewards.Services
                 Rewards = rewards.OrderByDescending(t=>t.TimeStamp).ToList()
             });
         }
+
+        public WalletResponse GetWalletInfo()
+        {
+            return new WalletResponse
+            {
+                ClientId = Program.Settings.BonusServiceClientId,
+                WalletId = Program.Settings.BonusServiceWalletId,
+                BrokerId = Program.Settings.DefaultBroker
+            };
+        }
     }
 }

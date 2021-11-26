@@ -9,5 +9,8 @@ namespace Service.BonusRewards.Grpc
     {
         [OperationContract]
         Task<RewardsResponse> GetRewards();
+        
+        [OperationContract]
+        WalletResponse GetWalletInfo();
     }
 }

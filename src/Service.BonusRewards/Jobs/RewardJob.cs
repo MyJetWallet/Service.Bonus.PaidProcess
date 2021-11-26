@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNetCoreDecorators;
@@ -172,7 +173,8 @@ namespace Service.BonusRewards.Jobs
         }
 
         private async Task HandlePayments(ExecuteRewardMessage message, bool toReferrer)
-        {            
+        {
+            Console.WriteLine(JsonSerializer.Serialize(message));
             await using var context = new DatabaseContext(_dbContextOptionsBuilder.Options);
 
             string referrerId = "";
