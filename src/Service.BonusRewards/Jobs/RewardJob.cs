@@ -181,21 +181,6 @@ namespace Service.BonusRewards.Jobs
             if (string.IsNullOrWhiteSpace(message.ClientId))
             {
                 _logger.LogError("Unable to process referrer payment without referrerId. Reward {rewardId} failed",  message.RewardId);
-
-                await context.UpsertAsync(new[]
-                {
-                    new RewardEntity
-                    {
-                        ClientId = message.ClientId,
-                        RewardId = message.RewardId,
-                        CampaignId = message.CampaignId,
-                        RewardType = type.ToString(),
-                        Status = RewardStatus.Failed,
-                        Asset = message.Asset,
-                        AmountAbs = message.AmountAbs,
-                        TimeStamp = DateTime.UtcNow
-                    }
-                });
                 return;
             }
 
