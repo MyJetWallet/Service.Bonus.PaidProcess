@@ -174,11 +174,29 @@ namespace Service.BonusRewards.Jobs
 
         private async Task HandlePayments(ExecuteRewardMessage message, bool toReferrer)
         {
-            Console.WriteLine(JsonSerializer.Serialize(message));
             await using var context = new DatabaseContext(_dbContextOptionsBuilder.Options);
 
             Enum.TryParse(message.RewardType, out RewardType type);
-            
+
+            if (string.IsNullOrWhiteSpace(message.ClientId))
+            {
+                _logger.LogError("Unable to process referrer payment without referrerId. Reward {rewardId} failed",  message.RewardId);
+
+                await context.UpsertAsync(new[]
+                {
+                    new RewardEntity
+                    {
+                        ClientId = message.ClientId,
+                        RewardId = message.RewardId,
+                        CampaignId = message.CampaignId,
+                        RewardType = type.ToString(),
+                        Status = RewardStatus.Failed,
+                        Asset = message.Asset,
+                        AmountAbs = message.AmountAbs,
+                        TimeStamp = DateTime.UtcNow
+                    }
+                });
+            }
 
             var walletsResponse = await _clientWalletService.GetWalletsByClient(new JetClientIdentity()
             {
