@@ -177,39 +177,12 @@ namespace Service.BonusRewards.Jobs
             Console.WriteLine(JsonSerializer.Serialize(message));
             await using var context = new DatabaseContext(_dbContextOptionsBuilder.Options);
 
-            string referrerId = "";
             Enum.TryParse(message.RewardType, out RewardType type);
-
-            if (toReferrer)
-            {
-                var profile = await _clientProfileService.GetOrCreateProfile(new GetClientProfileRequest
-                {
-                    ClientId = message.ClientId
-                });
             
-                if (string.IsNullOrWhiteSpace(profile.ReferrerClientId))
-                {
-                    _logger.LogError("Unable to find referrerId for clientId {clientId}. Reward {rewardId} failed",
-                        message.ClientId, message.RewardId);
-                    await context.UpsertAsync(new[]
-                    {
-                        new RewardEntity
-                        {
-                            ClientId = message.ClientId,
-                            RewardId = message.RewardId,
-                            CampaignId = message.CampaignId,
-                            RewardType = type.ToString(),
-                            Status = RewardStatus.Failed,
-                            TimeStamp = DateTime.UtcNow
-                        }
-                    });
-                    return;
-                }
-            }
 
             var walletsResponse = await _clientWalletService.GetWalletsByClient(new JetClientIdentity()
             {
-                ClientId = toReferrer ? referrerId : message.ClientId,
+                ClientId = message.ClientId,
                 BrokerId = Program.Settings.DefaultBroker,
                 BrandId = Program.Settings.DefaultBrand
             });
@@ -234,7 +207,7 @@ namespace Service.BonusRewards.Jobs
                 await _publisher.PublishAsync(new RewardPaymentMessage
                 {
                     OperationId = transactionId,
-                    ClientId = toReferrer ? referrerId : message.ClientId,
+                    ClientId = message.ClientId,
                     WalletId = walletsResponse.Wallets.First().WalletId,
                     Asset = message.Asset,
                     Amount = message.AmountAbs,
@@ -257,7 +230,7 @@ namespace Service.BonusRewards.Jobs
             {
                 new RewardEntity
                 {
-                    ClientId = toReferrer ? referrerId : message.ClientId,
+                    ClientId = message.ClientId,
                     RewardId = message.RewardId,
                     CampaignId = message.CampaignId,
                     RewardType = type.ToString(),
