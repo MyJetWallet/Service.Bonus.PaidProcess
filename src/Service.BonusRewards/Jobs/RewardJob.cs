@@ -196,6 +196,7 @@ namespace Service.BonusRewards.Jobs
                         TimeStamp = DateTime.UtcNow
                     }
                 });
+                return;
             }
 
             var walletsResponse = await _clientWalletService.GetWalletsByClient(new JetClientIdentity()
