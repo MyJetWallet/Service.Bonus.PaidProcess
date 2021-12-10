@@ -84,7 +84,7 @@ namespace Service.BonusRewards.Jobs
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Unable handle reward message with type {type}, clientId {clientId}, rewardId {rewardId}, campaignId {campaignId}", message.RewardType, message.ClientId, message.RewardId, message.CampaignId);
+                _logger.LogError(e, "Unable to handle reward message with type {type}, clientId {clientId}, rewardId {rewardId}, campaignId {campaignId}", message.RewardType, message.ClientId, message.RewardId, message.CampaignId);
                 throw;
             }
         }
@@ -152,7 +152,7 @@ namespace Service.BonusRewards.Jobs
             else
             {
                 _logger.LogError("Unable to assign client {clientId} to fee share group {feeShareGroupId}. ErrorCode {errorMessage}. Reward {rewardId} failed", message.ClientId, message.FeeShareGroup, response.ErrorCode, message.RewardId);
-                Thread.Sleep(10000);
+                Thread.Sleep(60000);
                 throw new Exception($"Unable to assign client {message.ClientId} to fee share group {message.FeeShareGroup}. ErrorCode {response.ErrorCode}. Reward {message.RewardId} failed");
             }
             
@@ -226,7 +226,7 @@ namespace Service.BonusRewards.Jobs
             else
             {
                 _logger.LogError("Unable to transfer reward to {clientId}. ME response: {errorMessage}. Reward {rewardId} failed", message.ClientId, response.ErrorMessage, message.RewardId);
-                Thread.Sleep(10000);
+                Thread.Sleep(60000);
                 throw new Exception($"Unable to transfer reward to {message.ClientId}. ME response: {response.ErrorMessage}. Reward {message.RewardId} failed");
             }
 

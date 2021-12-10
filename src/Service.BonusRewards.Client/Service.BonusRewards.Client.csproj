@@ -28,8 +28,8 @@
     <Authors>MyJetWallet</Authors>
     <Company>MyJetWallet</Company>
     <Product>MyJetWallet</Product>
-    <PackageProjectUrl>https://github.com/MyJetWallet/Service.BonusRewards</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/MyJetWallet/Service.BonusRewards</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/MyJetWallet/Service.Bonus.PaidProcess</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/MyJetWallet/Service.Bonus.PaidProcess</RepositoryUrl>
   </PropertyGroup>
 
   <Target Name="PackReferencedProjectOutputs" DependsOnTargets="BuildOnlySettings;ResolveReferences">
