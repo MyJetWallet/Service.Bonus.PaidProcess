@@ -24,5 +24,8 @@ namespace Service.BonusRewards.Domain.Models
         [DataMember(Order = 10)]public decimal AmountRel { get; set; }
         [DataMember(Order = 11)]public decimal Percentage { get; set; }    
         [DataMember(Order = 12)] public DateTime TimeStamp { get; set; }
+        [DataMember(Order = 13)]public string ClientWalletId { get; set; }
+        [DataMember(Order = 14)]public decimal IndexPrice { get; set; }
+
     }
 }

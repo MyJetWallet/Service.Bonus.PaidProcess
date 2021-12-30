@@ -1,6 +1,7 @@
 ﻿using Autofac;
 using Autofac.Core;
 using Autofac.Core.Registration;
+using MyJetWallet.Sdk.NoSql;
 using MyJetWallet.Sdk.ServiceBus;
 using MyServiceBus.Abstractions;
 using Service.BonusRewards.Domain.Models;
@@ -9,6 +10,7 @@ using Service.ChangeBalanceGateway.Client;
 using Service.ClientProfile.Client;
 using Service.ClientWallets.Client;
 using Service.FeeShareEngine.Client;
+using Service.IndexPrices.Client;
 
 namespace Service.BonusRewards.Modules
 {
@@ -16,6 +18,8 @@ namespace Service.BonusRewards.Modules
     {
         protected override void Load(ContainerBuilder builder)
         {
+            var myNoSqlClient = builder.CreateNoSqlClient(Program.ReloadedSettings(e => e.MyNoSqlReaderHostPort));
+
             var serviceBusClient =
                 builder.RegisterMyServiceBusTcpClient(Program.ReloadedSettings(e => e.SpotServiceBusHostPort), Program.LogFactory);
             var queueName = "Service.BonusReward";
@@ -25,8 +29,9 @@ namespace Service.BonusRewards.Modules
             builder.RegisterMyServiceBusSubscriberSingle<ExecuteRewardMessage>(serviceBusClient,
                 ExecuteRewardMessage.TopicName, queueName, TopicQueueType.PermanentWithSingleConnection);
             
-            builder.RegisterClientProfileClientWithoutCache(Program.Settings.ClientProfileGrpcServiceUrl);
-            builder.RegisterClientWalletsClientsWithoutCache(Program.Settings.ClientWalletsGrpcServiceUrl);
+            builder.RegisterIndexPricesClient(myNoSqlClient);
+            builder.RegisterClientProfileClients(myNoSqlClient, Program.Settings.ClientProfileGrpcServiceUrl);
+            builder.RegisterClientWalletsClients(myNoSqlClient, Program.Settings.ClientWalletsGrpcServiceUrl);
             builder.RegisterFeeShareEngineClient(Program.Settings.FeeShareGrpcServiceUrl);
             builder.RegisterSpotChangeBalanceGatewayClient(Program.Settings.ChangeBalanceGatewayGrpcServiceUrl);
 

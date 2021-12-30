@@ -20,6 +20,7 @@ using Service.ClientWallets.Grpc;
 using Service.ClientWallets.Grpc.Models;
 using Service.FeeShareEngine.Grpc;
 using Service.FeeShareEngine.Grpc.Models;
+using Service.IndexPrices.Client;
 using AddReferralRequest = Service.FeeShareEngine.Grpc.Models.AddReferralRequest;
 
 namespace Service.BonusRewards.Jobs
@@ -33,10 +34,11 @@ namespace Service.BonusRewards.Jobs
         private readonly IServiceBusPublisher<RewardPaymentMessage> _publisher;
         private readonly ILogger<RewardJob> _logger;
         private readonly DbContextOptionsBuilder<DatabaseContext> _dbContextOptionsBuilder;
+        private readonly IIndexPricesClient _pricesClient;
 
         public RewardJob(IClientWalletService clientWalletService, ISpotChangeBalanceService changeBalanceService,
             IFeeShareEngineManager feeShareEngine, IClientProfileService clientProfileService,
-            ISubscriber<ExecuteRewardMessage> subscriber, ILogger<RewardJob> logger, IServiceBusPublisher<RewardPaymentMessage> publisher, DbContextOptionsBuilder<DatabaseContext> dbContextOptionsBuilder)
+            ISubscriber<ExecuteRewardMessage> subscriber, ILogger<RewardJob> logger, IServiceBusPublisher<RewardPaymentMessage> publisher, DbContextOptionsBuilder<DatabaseContext> dbContextOptionsBuilder, IIndexPricesClient pricesClient)
         {
             _clientWalletService = clientWalletService;
             _changeBalanceService = changeBalanceService;
@@ -45,6 +47,7 @@ namespace Service.BonusRewards.Jobs
             _logger = logger;
             _publisher = publisher;
             _dbContextOptionsBuilder = dbContextOptionsBuilder;
+            _pricesClient = pricesClient;
 
             subscriber.Subscribe(HandleRewards);
         }
@@ -191,6 +194,7 @@ namespace Service.BonusRewards.Jobs
                 BrandId = Program.Settings.DefaultBrand
             });
 
+            var walletId = walletsResponse.Wallets.First().WalletId;
             var transactionId = $"{message.ClientId}+|+{message.RewardId}";
 
             var response = await _changeBalanceService.PayBonusRewardAsync(new FeeTransferRequest
@@ -198,7 +202,7 @@ namespace Service.BonusRewards.Jobs
                 TransactionId = transactionId,
                 ClientId = Program.Settings.BonusServiceClientId,
                 FromWalletId = Program.Settings.BonusServiceWalletId,
-                ToWalletId = walletsResponse.Wallets.First().WalletId,
+                ToWalletId = walletId,
                 Amount = (double)message.AmountAbs,
                 AssetSymbol = message.Asset,
                 Comment = $"Reward payment for campaign {message.CampaignId}",
@@ -241,7 +245,9 @@ namespace Service.BonusRewards.Jobs
                     Status = response.Result ? RewardStatus.Done : RewardStatus.Failed,
                     Asset = message.Asset,
                     AmountAbs = message.AmountAbs,
-                    TimeStamp = DateTime.UtcNow
+                    TimeStamp = DateTime.UtcNow,
+                    ClientWalletId = walletId,
+                    IndexPrice = _pricesClient.GetIndexPriceByAssetAsync(message.Asset).UsdPrice
                 }
             });
         }

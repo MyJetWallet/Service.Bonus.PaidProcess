@@ -43,6 +43,8 @@ namespace Service.BonusRewards.Settings
         
         [YamlProperty("BonusRewards.SpotServiceBusHostPort")]
         public string SpotServiceBusHostPort { get; set; }
-
+        
+        [YamlProperty("BonusRewards.MyNoSqlReaderHostPort")]
+        public string MyNoSqlReaderHostPort { get; set; }
     }
 }
