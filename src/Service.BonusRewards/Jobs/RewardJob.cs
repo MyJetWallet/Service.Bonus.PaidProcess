@@ -64,14 +64,8 @@ namespace Service.BonusRewards.Jobs
                             await HandleFeeShareAssignment(message);
                             break;
                         case RewardType.ReferrerPaymentAbsolute:
-                            await HandlePayments(message, true);
-                            break;
                         case RewardType.ClientPaymentAbsolute:
-                            await HandlePayments(message, false);
-                            break;
-                        case RewardType.ReferrerPaymentRelative:
-                            break;
-                        case RewardType.ClientPaymentRelative:
+                            await HandlePayments(message);
                             break;
                         default:
                             _logger.LogError(
@@ -96,6 +90,22 @@ namespace Service.BonusRewards.Jobs
         {
             await using var context = new DatabaseContext(_dbContextOptionsBuilder.Options);
             Enum.TryParse(message.RewardType, out RewardType type);
+            
+            await context.UpsertAsync(new[]
+            {
+                new RewardEntity
+                {
+                    ClientId = message.ClientId,
+                    RewardId = message.RewardId,
+                    CampaignId = message.CampaignId,
+                    RewardType = type.ToString(),
+                    Status = RewardStatus.New,
+                    FeeShareGroup = message.FeeShareGroup,
+                    ReferrerClientId = String.Empty,
+                    TimeStamp = DateTime.UtcNow
+                }
+            });
+            
             var profile = await _clientProfileService.GetOrCreateProfile(new GetClientProfileRequest
             {
                 ClientId = message.ClientId
@@ -149,16 +159,6 @@ namespace Service.BonusRewards.Jobs
                 FeeShareGroupId = feeShareGroup.GroupId
             });
 
-            if (response.IsSuccess)
-                _logger.LogInformation("Reward {rewardId} for client {clientId} executed successfully",
-                    message.RewardId, message.ClientId);
-            else
-            {
-                _logger.LogError("Unable to assign client {clientId} to fee share group {feeShareGroupId}. ErrorCode {errorMessage}. Reward {rewardId} failed", message.ClientId, message.FeeShareGroup, response.ErrorCode, message.RewardId);
-                Thread.Sleep(60000);
-                throw new Exception($"Unable to assign client {message.ClientId} to fee share group {message.FeeShareGroup}. ErrorCode {response.ErrorCode}. Reward {message.RewardId} failed");
-            }
-            
             await context.UpsertAsync(new[]
             {
                 new RewardEntity
@@ -173,19 +173,56 @@ namespace Service.BonusRewards.Jobs
                     TimeStamp = DateTime.UtcNow
                 }
             });
+            
+            if (response.IsSuccess)
+                _logger.LogInformation("Reward {rewardId} for client {clientId} executed successfully",
+                    message.RewardId, message.ClientId);
+            else
+            {
+                _logger.LogError("Unable to assign client {clientId} to fee share group {feeShareGroupId}. ErrorCode {errorMessage}. Reward {rewardId} failed", message.ClientId, message.FeeShareGroup, response.ErrorCode, message.RewardId);
+                Thread.Sleep(60000);
+                throw new Exception($"Unable to assign client {message.ClientId} to fee share group {message.FeeShareGroup}. ErrorCode {response.ErrorCode}. Reward {message.RewardId} failed");
+            }
         }
 
-        private async Task HandlePayments(ExecuteRewardMessage message, bool toReferrer)
+        private async Task HandlePayments(ExecuteRewardMessage message)
         {
             await using var context = new DatabaseContext(_dbContextOptionsBuilder.Options);
+
+            var existingReward = await context.RewardEntities.FirstOrDefaultAsync(t =>
+                t.ClientId == message.ClientId && t.RewardId == message.RewardId);
+
+            if (existingReward != null && existingReward.Status == RewardStatus.Done)
+            {
+                _logger.LogInformation("Reward {rewardId} for client {clientId} was already executed",
+                    message.RewardId, message.ClientId);
+                return;
+            }
 
             Enum.TryParse(message.RewardType, out RewardType type);
 
             if (string.IsNullOrWhiteSpace(message.ClientId))
             {
-                _logger.LogError("Unable to process referrer payment without referrerId. Reward {rewardId} failed",  message.RewardId);
+                _logger.LogError("Unable to process payment without client. Reward {rewardId} failed",  message.RewardId);
                 return;
             }
+
+            await context.UpsertAsync(new[]
+            {
+                new RewardEntity
+                {
+                    ClientId = message.ClientId,
+                    RewardId = message.RewardId,
+                    CampaignId = message.CampaignId,
+                    RewardType = type.ToString(),
+                    Status = RewardStatus.New,
+                    Asset = message.Asset,
+                    AmountAbs = message.AmountAbs,
+                    TimeStamp = DateTime.UtcNow,
+                    ClientWalletId = String.Empty,
+                    IndexPrice = _pricesClient.GetIndexPriceByAssetAsync(message.Asset).UsdPrice
+                }
+            });
 
             var walletsResponse = await _clientWalletService.GetWalletsByClient(new JetClientIdentity()
             {
@@ -223,17 +260,6 @@ namespace Service.BonusRewards.Jobs
                 });
             }
             
-            
-            if (response.Result)
-                _logger.LogInformation("Reward {rewardId} for client {clientId} executed successfully",
-                    message.RewardId, message.ClientId);
-            else
-            {
-                _logger.LogError("Unable to transfer reward to {clientId}. ME response: {errorMessage}. Reward {rewardId} failed", message.ClientId, response.ErrorMessage, message.RewardId);
-                Thread.Sleep(60000);
-                throw new Exception($"Unable to transfer reward to {message.ClientId}. ME response: {response.ErrorMessage}. Reward {message.RewardId} failed");
-            }
-
             await context.UpsertAsync(new[]
             {
                 new RewardEntity
@@ -250,6 +276,16 @@ namespace Service.BonusRewards.Jobs
                     IndexPrice = _pricesClient.GetIndexPriceByAssetAsync(message.Asset).UsdPrice
                 }
             });
+            
+            if (response.Result)
+                _logger.LogInformation("Reward {rewardId} for client {clientId} executed successfully",
+                    message.RewardId, message.ClientId);
+            else
+            {
+                _logger.LogError("Unable to transfer reward to {clientId}. ME response: {errorMessage}. Reward {rewardId} failed", message.ClientId, response.ErrorMessage, message.RewardId);
+                Thread.Sleep(60000);
+                throw new Exception($"Unable to transfer reward to {message.ClientId}. ME response: {response.ErrorMessage}. Reward {message.RewardId} failed");
+            }
         }
     }
 }
