@@ -241,7 +241,7 @@ namespace Service.BonusRewards.Jobs
                 FromWalletId = Program.Settings.BonusServiceWalletId,
                 ToWalletId = walletId,
                 Amount = message.AmountAbs,
-                AssetSymbol = message.Asset,
+                AssetSymbol = message.Asset.ToUpper(),
                 Comment = $"Reward payment for campaign {message.CampaignId}",
                 BrokerId = Program.Settings.DefaultBroker,
                 RequestSource = "Service.BonusRewards"
