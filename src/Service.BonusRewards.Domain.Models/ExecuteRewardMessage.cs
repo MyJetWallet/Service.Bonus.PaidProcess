@@ -17,5 +17,8 @@ namespace Service.BonusRewards.Domain.Models
         [DataMember(Order = 7)] public string CampaignId { get; set; }
         [DataMember(Order = 8)] public decimal AmountRel { get; set; }
         [DataMember(Order = 9)] public decimal Percentage { get; set; }
+        [DataMember(Order = 10)] public string ReferralClientId { get; set; }
+        [DataMember(Order = 11)] public string ReferrerClientId { get; set; }
+
     }
 }

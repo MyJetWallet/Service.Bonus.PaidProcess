@@ -26,6 +26,7 @@ namespace Service.BonusRewards.Domain.Models
         [DataMember(Order = 12)] public DateTime TimeStamp { get; set; }
         [DataMember(Order = 13)]public string ClientWalletId { get; set; }
         [DataMember(Order = 14)]public decimal IndexPrice { get; set; }
-
+        
+        [DataMember(Order = 15)] public string ReferralClientId { get; set; }
     }
 }

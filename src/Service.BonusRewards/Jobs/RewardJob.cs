@@ -90,21 +90,20 @@ namespace Service.BonusRewards.Jobs
         {
             await using var context = new DatabaseContext(_dbContextOptionsBuilder.Options);
             Enum.TryParse(message.RewardType, out RewardType type);
-            
-            await context.UpsertAsync(new[]
+
+            var entity = new RewardEntity
             {
-                new RewardEntity
-                {
-                    ClientId = message.ClientId,
-                    RewardId = message.RewardId,
-                    CampaignId = message.CampaignId,
-                    RewardType = type.ToString(),
-                    Status = RewardStatus.New,
-                    FeeShareGroup = message.FeeShareGroup,
-                    ReferrerClientId = String.Empty,
-                    TimeStamp = DateTime.UtcNow
-                }
-            });
+                ClientId = message.ClientId,
+                RewardId = message.RewardId,
+                CampaignId = message.CampaignId,
+                RewardType = type.ToString(),
+                Status = RewardStatus.New,
+                FeeShareGroup = message.FeeShareGroup,
+                ReferrerClientId = message.ReferrerClientId,
+                ReferralClientId = message.ReferralClientId,
+                TimeStamp = DateTime.UtcNow
+            };
+            await context.UpsertAsync(new[] {entity});
             
             var profile = await _clientProfileService.GetOrCreateProfile(new GetClientProfileRequest
             {
@@ -115,18 +114,10 @@ namespace Service.BonusRewards.Jobs
             {
                 _logger.LogError("Unable to find referrerId for clientId {clientId}. Reward {rewardId} failed",
                     message.ClientId, message.RewardId);
-                await context.UpsertAsync(new[]
-                {
-                    new RewardEntity
-                    {
-                        ClientId = message.ClientId,
-                        RewardId = message.RewardId,
-                        CampaignId = message.CampaignId,
-                        RewardType = type.ToString(),
-                        Status = RewardStatus.Failed,
-                        TimeStamp = DateTime.UtcNow
-                    }
-                });
+                
+                entity.Status = RewardStatus.Failed;
+                await context.UpsertAsync(new[] {entity});
+
                 return;
             }
 
@@ -137,18 +128,8 @@ namespace Service.BonusRewards.Jobs
             if (feeShareGroup == null)
             {
                 _logger.LogError("Unable to find FeeShareGroup {feeShareGroupId}. Reward {rewardId} failed",message.FeeShareGroup, message.RewardId);
-                await context.UpsertAsync(new[]
-                {
-                    new RewardEntity
-                    {
-                        ClientId = message.ClientId,
-                        RewardId = message.RewardId,
-                        CampaignId = message.CampaignId,
-                        RewardType = type.ToString(),
-                        Status = RewardStatus.Failed,
-                        TimeStamp = DateTime.UtcNow
-                    }
-                });
+                entity.Status = RewardStatus.Failed;
+                await context.UpsertAsync(new[] {entity});
                 return;
             }
             
@@ -158,21 +139,12 @@ namespace Service.BonusRewards.Jobs
                 ReferrerClientId = profile.ReferrerClientId,
                 FeeShareGroupId = feeShareGroup.GroupId
             });
-
-            await context.UpsertAsync(new[]
-            {
-                new RewardEntity
-                {
-                    ClientId = message.ClientId,
-                    RewardId = message.RewardId,
-                    CampaignId = message.CampaignId,
-                    RewardType = type.ToString(),
-                    Status = response.IsSuccess ? RewardStatus.Done : RewardStatus.Failed,
-                    FeeShareGroup = message.FeeShareGroup,
-                    ReferrerClientId = profile.ReferrerClientId,
-                    TimeStamp = DateTime.UtcNow
-                }
-            });
+            
+            entity.Status = response.IsSuccess ? RewardStatus.Done : RewardStatus.Failed;
+            entity.FeeShareGroup = message.FeeShareGroup;
+            entity.ReferrerClientId = profile.ReferrerClientId;
+            
+            await context.UpsertAsync(new[] {entity});
             
             if (response.IsSuccess)
                 _logger.LogInformation("Reward {rewardId} for client {clientId} executed successfully",
@@ -207,22 +179,23 @@ namespace Service.BonusRewards.Jobs
                 return;
             }
 
-            await context.UpsertAsync(new[]
+            var entity = new RewardEntity
             {
-                new RewardEntity
-                {
-                    ClientId = message.ClientId,
-                    RewardId = message.RewardId,
-                    CampaignId = message.CampaignId,
-                    RewardType = type.ToString(),
-                    Status = RewardStatus.New,
-                    Asset = message.Asset,
-                    AmountAbs = message.AmountAbs,
-                    TimeStamp = DateTime.UtcNow,
-                    ClientWalletId = String.Empty,
-                    IndexPrice = _pricesClient.GetIndexPriceByAssetAsync(message.Asset).UsdPrice
-                }
-            });
+                ClientId = message.ClientId,
+                RewardId = message.RewardId,
+                CampaignId = message.CampaignId,
+                RewardType = type.ToString(),
+                Status = RewardStatus.New,
+                Asset = message.Asset,
+                AmountAbs = message.AmountAbs,
+                TimeStamp = DateTime.UtcNow,
+                ClientWalletId = String.Empty,
+                IndexPrice = _pricesClient.GetIndexPriceByAssetAsync(message.Asset).UsdPrice,
+                ReferralClientId = message.ReferralClientId,
+                ReferrerClientId = message.ReferrerClientId
+            };
+            
+            await context.UpsertAsync(new[] {entity});
 
             var walletsResponse = await _clientWalletService.GetWalletsByClient(new JetClientIdentity()
             {
@@ -259,24 +232,12 @@ namespace Service.BonusRewards.Jobs
                     TimeStamp = DateTime.UtcNow
                 });
             }
-            
-            await context.UpsertAsync(new[]
-            {
-                new RewardEntity
-                {
-                    ClientId = message.ClientId,
-                    RewardId = message.RewardId,
-                    CampaignId = message.CampaignId,
-                    RewardType = type.ToString(),
-                    Status = response.Result ? RewardStatus.Done : RewardStatus.Failed,
-                    Asset = message.Asset,
-                    AmountAbs = message.AmountAbs,
-                    TimeStamp = DateTime.UtcNow,
-                    ClientWalletId = walletId,
-                    IndexPrice = _pricesClient.GetIndexPriceByAssetAsync(message.Asset).UsdPrice
-                }
-            });
-            
+
+            entity.Status = response.Result ? RewardStatus.Done : RewardStatus.Failed;
+            entity.ClientWalletId = walletId;
+            entity.IndexPrice = _pricesClient.GetIndexPriceByAssetAsync(message.Asset).UsdPrice;
+            await context.UpsertAsync(new[] {entity});
+
             if (response.Result)
                 _logger.LogInformation("Reward {rewardId} for client {clientId} executed successfully",
                     message.RewardId, message.ClientId);
