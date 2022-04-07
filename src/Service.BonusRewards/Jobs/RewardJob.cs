@@ -64,8 +64,10 @@ namespace Service.BonusRewards.Jobs
                             await HandleFeeShareAssignment(message);
                             break;
                         case RewardType.ReferrerPaymentAbsolute:
+                            await HandlePayments(message, true);
+                            break;
                         case RewardType.ClientPaymentAbsolute:
-                            await HandlePayments(message);
+                            await HandlePayments(message, false);
                             break;
                         default:
                             _logger.LogError(
@@ -157,7 +159,7 @@ namespace Service.BonusRewards.Jobs
             }
         }
 
-        private async Task HandlePayments(ExecuteRewardMessage message)
+        private async Task HandlePayments(ExecuteRewardMessage message, bool referrerPayment)
         {
             await using var context = new DatabaseContext(_dbContextOptionsBuilder.Options);
 
@@ -166,7 +168,7 @@ namespace Service.BonusRewards.Jobs
 
             if (existingReward != null && existingReward.Status == RewardStatus.Done)
             {
-                _logger.LogInformation("Reward {rewardId} for client {clientId} was already executed",
+                _logger.LogWarning("Reward {rewardId} for client {clientId} was already executed",
                     message.RewardId, message.ClientId);
                 return;
             }
@@ -178,6 +180,8 @@ namespace Service.BonusRewards.Jobs
                 _logger.LogError("Unable to process payment without client. Reward {rewardId} failed",  message.RewardId);
                 return;
             }
+
+            var receiverId = referrerPayment ? message.ReferrerClientId : message.ClientId;
 
             var entity = new RewardEntity
             {
@@ -199,13 +203,13 @@ namespace Service.BonusRewards.Jobs
 
             var walletsResponse = await _clientWalletService.GetWalletsByClient(new JetClientIdentity()
             {
-                ClientId = message.ClientId,
+                ClientId = receiverId,
                 BrokerId = Program.Settings.DefaultBroker,
                 BrandId = Program.Settings.DefaultBrand
             });
 
             var walletId = walletsResponse.Wallets.First().WalletId;
-            var transactionId = $"{message.ClientId}+|+{message.RewardId}";
+            var transactionId = $"{receiverId}+|+{message.RewardId}";
 
             var response = await _changeBalanceService.PayBonusRewardAsync(new FeeTransferRequest
             {
@@ -225,7 +229,7 @@ namespace Service.BonusRewards.Jobs
                 await _publisher.PublishAsync(new RewardPaymentMessage
                 {
                     OperationId = transactionId,
-                    ClientId = message.ClientId,
+                    ClientId = receiverId,
                     WalletId = walletsResponse.Wallets.First().WalletId,
                     Asset = message.Asset,
                     Amount = message.AmountAbs,
@@ -240,12 +244,12 @@ namespace Service.BonusRewards.Jobs
 
             if (response.Result)
                 _logger.LogInformation("Reward {rewardId} for client {clientId} executed successfully",
-                    message.RewardId, message.ClientId);
+                    message.RewardId, receiverId);
             else
             {
-                _logger.LogError("Unable to transfer reward to {clientId}. ME response: {errorMessage}. Reward {rewardId} failed", message.ClientId, response.ErrorMessage, message.RewardId);
+                _logger.LogError("Unable to transfer reward to {clientId}. ME response: {errorMessage}. Reward {rewardId} failed", receiverId, response.ErrorMessage, message.RewardId);
                 Thread.Sleep(60000);
-                throw new Exception($"Unable to transfer reward to {message.ClientId}. ME response: {response.ErrorMessage}. Reward {message.RewardId} failed");
+                throw new Exception($"Unable to transfer reward to {receiverId}. ME response: {response.ErrorMessage}. Reward {message.RewardId} failed");
             }
         }
     }
