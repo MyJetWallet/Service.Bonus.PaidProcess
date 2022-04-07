@@ -20,9 +20,9 @@
     <PackageReference Include="MyJetWallet.Sdk.Postgres" Version="2.2.0" />
     <PackageReference Include="MyJetWallet.Sdk.Service" Version="2.1.7" />
     <PackageReference Include="MyJetWallet.Sdk.ServiceBus" Version="2.2.2" />
-    <PackageReference Include="MyJetWallet.Service.BonusCampaign.Client" Version="1.4.5" />
+    <PackageReference Include="MyJetWallet.Service.BonusCampaign.Client" Version="1.4.7" />
     <PackageReference Include="MyJetWallet.Service.ChangeBalanceGateway.Client" Version="2.0.2" />
-    <PackageReference Include="MyJetWallet.Service.ClientProfile.Client" Version="1.1.4" />
+    <PackageReference Include="MyJetWallet.Service.ClientProfile.Client" Version="1.1.5" />
     <PackageReference Include="MyJetWallet.Service.ClientWallets.Client" Version="1.4.2" />
     <PackageReference Include="MyJetWallet.Service.FeeShareEngine.Client" Version="1.1.0" />
     <PackageReference Include="MyJetWallet.Service.IndexPrices.Client" Version="1.7.3" />
