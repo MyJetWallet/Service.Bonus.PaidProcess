@@ -209,7 +209,7 @@ namespace Service.BonusRewards.Jobs
             });
 
             var walletId = walletsResponse.Wallets.First().WalletId;
-            var transactionId = $"{receiverId}+|+{message.RewardId}";
+            var transactionId = $"{Guid.NewGuid():N}+|+{message.RewardId}";
 
             var response = await _changeBalanceService.PayBonusRewardAsync(new FeeTransferRequest
             {
