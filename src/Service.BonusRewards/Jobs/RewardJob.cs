@@ -180,6 +180,12 @@ namespace Service.BonusRewards.Jobs
                 _logger.LogError("Unable to process payment without client. Reward {rewardId} failed",  message.RewardId);
                 return;
             }
+            
+            if (string.IsNullOrWhiteSpace(message.ReferrerClientId) && message.RewardType == "ReferrerPaymentAbsolute")
+            {
+                _logger.LogError("Unable to process referrer payment without referrer id. Reward {rewardId} failed",  message.RewardId);
+                return;
+            }
 
             var receiverId = referrerPayment ? message.ReferrerClientId : message.ClientId;
 
