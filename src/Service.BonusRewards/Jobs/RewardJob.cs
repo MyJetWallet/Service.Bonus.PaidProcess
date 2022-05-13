@@ -35,10 +35,17 @@ namespace Service.BonusRewards.Jobs
         private readonly ILogger<RewardJob> _logger;
         private readonly DbContextOptionsBuilder<DatabaseContext> _dbContextOptionsBuilder;
         private readonly IIndexPricesClient _pricesClient;
+        private readonly IServiceBusPublisher<FailedRewardPaymentMessage> _failedPaymentsPublisher;
 
         public RewardJob(IClientWalletService clientWalletService, ISpotChangeBalanceService changeBalanceService,
             IFeeShareEngineManager feeShareEngine, IClientProfileService clientProfileService,
-            ISubscriber<ExecuteRewardMessage> subscriber, ILogger<RewardJob> logger, IServiceBusPublisher<RewardPaymentMessage> publisher, DbContextOptionsBuilder<DatabaseContext> dbContextOptionsBuilder, IIndexPricesClient pricesClient)
+            ISubscriber<ExecuteRewardMessage> subscriber,
+            ILogger<RewardJob> logger,
+            IServiceBusPublisher<RewardPaymentMessage> publisher,
+            DbContextOptionsBuilder<DatabaseContext> dbContextOptionsBuilder,
+            IIndexPricesClient pricesClient,
+            IServiceBusPublisher<FailedRewardPaymentMessage> failedPaymentsPublisher 
+        )
         {
             _clientWalletService = clientWalletService;
             _changeBalanceService = changeBalanceService;
@@ -48,6 +55,7 @@ namespace Service.BonusRewards.Jobs
             _publisher = publisher;
             _dbContextOptionsBuilder = dbContextOptionsBuilder;
             _pricesClient = pricesClient;
+            _failedPaymentsPublisher = failedPaymentsPublisher;
 
             subscriber.Subscribe(HandleRewards);
         }
@@ -253,6 +261,14 @@ namespace Service.BonusRewards.Jobs
                     message.RewardId, receiverId);
             else
             {
+                await _failedPaymentsPublisher.PublishAsync(new FailedRewardPaymentMessage
+                {
+                    Reward = entity,
+                    ErrorType = response.ErrorCode == ChangeBalanceGrpcResponse.ErrorCodeEnum.LowBalance
+                        ? RewardPaymentErrorType.NotEnoughFundsOnBrokerBalance
+                        : RewardPaymentErrorType.None
+                });
+                
                 _logger.LogError("Unable to transfer reward to {clientId}. ME response: {errorMessage}. Reward {rewardId} failed", receiverId, response.ErrorMessage, message.RewardId);
                 Thread.Sleep(60000);
                 throw new Exception($"Unable to transfer reward to {receiverId}. ME response: {response.ErrorMessage}. Reward {message.RewardId} failed");

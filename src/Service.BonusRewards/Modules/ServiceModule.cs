@@ -28,6 +28,8 @@ namespace Service.BonusRewards.Modules
                 RewardPaymentMessage.TopicName, false);
             builder.RegisterMyServiceBusSubscriberSingle<ExecuteRewardMessage>(serviceBusClient,
                 ExecuteRewardMessage.TopicName, queueName, TopicQueueType.PermanentWithSingleConnection);
+            builder.RegisterMyServiceBusPublisher<FailedRewardPaymentMessage>(serviceBusClient,
+                FailedRewardPaymentMessage.TopicName, false);
             
             builder.RegisterIndexPricesClient(myNoSqlClient);
             builder.RegisterClientProfileClients(myNoSqlClient, Program.Settings.ClientProfileGrpcServiceUrl);
